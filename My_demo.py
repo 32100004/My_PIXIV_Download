@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Nov  3 10:33:04 2018
+
+@author: HIT
+"""
 
 # coding:utf-8
 import requests
@@ -10,8 +16,8 @@ import urllib
 
 se = requests.Session()
 
-_USERNAME = "***"
-_PASSWORD = "***"
+_USERNAME = "userbay"
+_PASSWORD = "userpay"
 
 class PixivSubClass:
     def __init__(self):
@@ -22,6 +28,8 @@ class PixivSubClass:
         self.multiple_imge = 0
         self.num_of_img = 1
         self.flag = 0
+        self.t_rank = -1
+		
 
 
 class PixivPicLoad:
@@ -138,15 +146,15 @@ class PixivPicLoad:
                 #debug
                 print(pImg.__dict__)
                 name_suffix=name_suffix2
-                img_url = base_url+sub_str+'_p0'+name_suffix
+                img_url = base_url+sub_str+'_p'+str(I_DNUM-1)+name_suffix
                 html = requests.get(img_url, headers=src_headers)
             
             
             img = html.content
             if max_num == 1:
-                img_title = pImg.title+'_id:'+str(pImg.pic_id)
+                img_title ='#'+str(pImg.t_rank)+'_'+ pImg.title+'_id:'+str(pImg.pic_id)
             else:
-                img_title = pImg.title+'_id:'+str(pImg.pic_id) + '_'+str(I_DNUM)
+                img_title ='#'+str(pImg.t_rank)+'_'+ pImg.title+'_id:'+str(pImg.pic_id) + '_'+str(I_DNUM)
                 
                 
         
@@ -181,7 +189,11 @@ class PixivPicLoad:
             html=res.text
             soup = BeautifulSoup(html,'html.parser')
             
-            for iImgIter in range(1,num_pic_per_page+1):
+            num_page = min(num_pic_per_page,len(soup.select('section'))-3)
+            
+            print('The num '+str(iRunIter)+' page is '+str(num_page))
+            
+            for iImgIter in range(1,num_page+1):
                 N = iImgIter + 2
 
                 title=soup.select('section')[N].attrs.get('data-title')
@@ -214,6 +226,7 @@ class PixivPicLoad:
                 
                 pImg=PixivSubClass()
                 pImg.title = title
+                pImg.t_rank = soup.select('section')[N].attrs.get('id')
                 pImg.pic_id = illus_id
                 pImg.y_rank = y_rank
                 pImg.type = img_type
@@ -228,12 +241,12 @@ class PixivPicLoad:
                 # 当图片是插图时
                 print('In page '+str(iRunIter)+' No. '+str(iImgIter))
                 
-                if pImg.type == 'illust':
+                
+                if pImg.flag == 0:  # 应该为0
+                    print('On yesterday\'s ranking, ignoring...')      
+                elif pImg.type == 'illust':
                     # 对于单图保存图片
                     if (pImg.num_of_img ==1) and (pImg.multiple_imge == 0) :
-                        if pImg.flag == 0:  # 应该为0
-                            print('On yesterday\'s ranking, ignoring...')
-                        else:
                             self.download_img(pImg,1)
                             print('Successfully downloading '+ str(iImgIter)+' in page '+ str(iRunIter))
                             
@@ -241,7 +254,6 @@ class PixivPicLoad:
                         if pImg.num_of_img > multi_page_download_set :
                             print('Multi Page Image Only Download first '+str(multi_page_download_set)+'-th Images')
                         self.download_img(pImg,multi_page_download_set)
-                        
                         
                 elif pImg.type == 'manga':
                     print('For Images of Type Manga, only download first page')
@@ -266,7 +278,10 @@ else:
     account=_USERNAME
     password=_PASSWORD
     spider.login(account, password)
-    
-spider.mkdir('XXXX')
 
-spider.download_daily_img(date='XXXXXXXX')
+	
+iPath = 'D:\MYTMP2DEL'
+spider.mkdir(iPath)
+
+spider.download_daily_img(date='20091110')
+
